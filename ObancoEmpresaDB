@@ -1,0 +1,95 @@
+-- ============================================
+-- Criação do Banco de Dados e Tabelas
+-- ============================================
+
+CREATE DATABASE EmpresaDB;
+USE EmpresaDB;
+
+-- Tabela de Funcionários
+CREATE TABLE Funcionarios (
+    id_funcionario INT AUTO_INCREMENT PRIMARY KEY,
+    nome VARCHAR(100) NOT NULL,
+    cargo VARCHAR(50),
+    salario DECIMAL(10,2),
+    data_admissao DATE
+);
+
+-- Tabela de Departamentos
+CREATE TABLE Departamentos (
+    id_departamento INT AUTO_INCREMENT PRIMARY KEY,
+    nome_departamento VARCHAR(100) NOT NULL,
+    localizacao VARCHAR(100)
+);
+
+-- Tabela de Log para registrar ações
+CREATE TABLE Log_Acoes (
+    id_log INT AUTO_INCREMENT PRIMARY KEY,
+    acao VARCHAR(50),
+    tabela_afetada VARCHAR(50),
+    data_hora TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    detalhes TEXT
+);
+
+-- ============================================
+-- Triggers
+-- ============================================
+
+DELIMITER $$
+
+-- Trigger para INSERT em Funcionarios
+CREATE TRIGGER trg_insert_funcionario
+AFTER INSERT ON Funcionarios
+FOR EACH ROW
+BEGIN
+    INSERT INTO Log_Acoes (acao, tabela_afetada, detalhes)
+    VALUES ('INSERT', 'Funcionarios',
+            CONCAT('Novo funcionário: ', NEW.nome, 
+                   ', Cargo: ', NEW.cargo, 
+                   ', Salário: ', NEW.salario));
+END$$
+
+-- Trigger para UPDATE em Funcionarios
+CREATE TRIGGER trg_update_funcionario
+AFTER UPDATE ON Funcionarios
+FOR EACH ROW
+BEGIN
+    INSERT INTO Log_Acoes (acao, tabela_afetada, detalhes)
+    VALUES ('UPDATE', 'Funcionarios',
+            CONCAT('Funcionário atualizado: ', NEW.nome,
+                   ', Cargo: ', NEW.cargo,
+                   ', Salário: ', NEW.salario));
+END$$
+
+-- Trigger para DELETE em Funcionarios
+CREATE TRIGGER trg_delete_funcionario
+AFTER DELETE ON Funcionarios
+FOR EACH ROW
+BEGIN
+    INSERT INTO Log_Acoes (acao, tabela_afetada, detalhes)
+    VALUES ('DELETE', 'Funcionarios',
+            CONCAT('Funcionário removido: ', OLD.nome,
+                   ', Cargo: ', OLD.cargo,
+                   ', Salário: ', OLD.salario));
+END$$
+
+DELIMITER ;
+
+-- ============================================
+-- Testes
+-- ============================================
+
+-- Inserir funcionário
+INSERT INTO Funcionarios (nome, cargo, salario, data_admissao)
+VALUES ('Maria Silva', 'Analista de Dados', 4500.00, '2025-12-04');
+
+-- Atualizar funcionário
+UPDATE Funcionarios
+SET salario = 5000.00
+WHERE nome = 'Maria Silva';
+
+-- Deletar funcionário
+DELETE FROM Funcionarios
+WHERE nome = 'Maria Silva';
+
+-- Consultar log
+SELECT * FROM Log_Acoes;
